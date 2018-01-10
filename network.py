@@ -4,7 +4,11 @@ from functools import reduce
 import os
 
 from utils import *
+<<<<<<< HEAD
 from cnn_read import Reader
+=======
+from cnn_read import Reader, dcmReader
+>>>>>>> CRF and mysterious network changing...
 
 class CRF_RNN(object):
     def __init__(self, input_shape, input_dim, batch_size=4, learning_rate=0.0002,
@@ -43,7 +47,11 @@ class CRF_RNN(object):
         self.label_vector = tf.placeholder(tf.float32, shape=[None, self.input_dim])
 
         self.fcnn, self.fcnn_logits = self._build_fcn()
+<<<<<<< HEAD
         # self.fc_crf = self._build_crf(self.fcnn, reuse=False)
+=======
+        # self.crf = self._build_crf(self.fcnn, reuse=False)
+>>>>>>> CRF and mysterious network changing...
 
         trainable_variables = tf.trainable_variables()
         self.fcn_vars = [var for var in trainable_variables if 'FCNN' in var.name]
@@ -89,7 +97,18 @@ class CRF_RNN(object):
     def _build_crf(self, unary, reuse=False):
         # reuse: iteratively update Q_{i}
         with tf.variable_scope('CRFasRNN', reuse=reuse):
+<<<<<<< HEAD
             pass
+=======
+            probs = tf.concat([1.0 - self.fcnn, self.fcnn], axis=3, name='probs')
+            img_op = tf.concat([self.input_image for _ in range(3)], axis=3, name='img_op')
+            img_op_cast = tf.cast(img_op, dtype=tf.uint8, name='img_op_cast')
+
+            crf = tf.py_func(dense_crf, inp=[probs, img_op_cast], Tout=tf.float32, name='crf')
+            inference = tf.argmax(crf, axis=3, name='inference')
+            expansion = tf.expand_dims(inference, axis=3, name='expansion')
+            return tf.cast(expansion, dtype=tf.float32, name='CRF')
+>>>>>>> CRF and mysterious network changing...
 
     def _loss_function(self):
         logit_vector = tf.reshape(self.fcnn_logits, shape=(self.batch_size, self.input_dim))
@@ -128,6 +147,17 @@ class CRF_RNN(object):
         else:
             return pred.reshape((input_size, self.input_dim))
 
+<<<<<<< HEAD
+=======
+    # def predict_n_inference(self, imgvec, as_list=True):
+    #     pred = self.sess.run(self.crf, feed_dict={self.input_image_vector: imgvec})
+    #     input_size = pred.shape[0]
+    #     if as_list:
+    #         return [pred[i, :, :, 0] for i in range(input_size)]
+    #     else:
+    #         return pred.reshape((input_size, self.input_dim))
+
+>>>>>>> CRF and mysterious network changing...
     def save(self):
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
@@ -154,6 +184,7 @@ class CRF_RNN(object):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     reader = Reader()
     crf_rnn = CRF_RNN(input_shape=[512,512,1], batch_size=1, input_dim=262144, learning_rate=2e-4, pre_train=True)
     # crf_rnn.train(reader, loop=8000)
@@ -170,4 +201,36 @@ if __name__ == '__main__':
             plt.show()
         plt.close()
 
+=======
+    reader = dcmReader()
+    crf_rnn = CRF_RNN(input_shape=[512,512,1], batch_size=1, input_dim=262144, learning_rate=2e-4, pre_train=True)
+    # crf_rnn.train(reader, loop=2000)
+
+    iter = 100
+    acc_without_crf = 0.0
+    acc_with_crf = 0.0
+    for _ in range(iter):
+        xs, ys = reader.next_batch(1)
+
+        pred = crf_rnn.predict(xs, as_list=False)
+        # infe = crf_rnn.predict_n_inference(xs, as_list=False)
+
+        # tmp_without_crf = get_accuracy(pred, ys)
+        # tmp_with_crf = get_accuracy(infe, ys)
+        # print('--Precision without CRF: %g --Precision with CRF: %g' % (tmp_without_crf, tmp_with_crf))
+        # acc_with_crf += tmp_with_crf
+        # acc_without_crf += tmp_without_crf
+
+        plt.figure()
+        plt.subplot(121)
+        plt.imshow(pred.reshape((512, 512)), cmap='gray')
+        # plt.subplot(122)
+        # plt.imshow(infe.reshape((512, 512)), cmap='gray')
+        # plt.show()
+        # plt.close()
+        plt.show()
+
+    print('\nTotal Precision:\n\t--Precision without CRF: %g\n\t--Precision with CRF: %g' %
+          (acc_without_crf / float(iter), acc_with_crf / float(iter)))
+>>>>>>> CRF and mysterious network changing...
     print('\nFinish!!!')

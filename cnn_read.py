@@ -5,8 +5,95 @@ import dicom
 import matplotlib.pyplot as plt
 from functools import reduce
 
+<<<<<<< HEAD
 src_path = 'E:\\C++\\Projects\\TrainingData\\Final!!!\\data\\'
 label_path = 'E:\\C++\\Projects\\TrainingData\\Final!!!\\label\\'
+=======
+src_path = 'E:\\C++\\Projects\\TrainingData\\train\\'
+label_path = 'E:\\C++\\Projects\\TrainingData\\label\\'
+
+# class Reader(object):
+#     def __init__(self):
+#         self.train = np.load('./TrainingData/train.npy')
+#         self.label = np.load('./TrainingData/label.npy')
+#         print('Training data loading finished!')
+#         print('Training data samples: %d \nLabels: %d' % (self.train.shape[0], self.label.shape[0]))
+#
+#     def next_batch(self, num):
+#         index = np.random.randint(low=0, high=self.train.shape[0], size=(1, num))
+#         x_batch = self.train[index]
+#         y_batch = self.label[index]
+#         return x_batch[0], y_batch[0]
+
+
+class dcmReader(object):
+    def __init__(self, x_path=src_path, y_path=label_path):
+        self.x_data = list()
+        self.y_data = list()
+        self.x_files = self._run_path(x_path)
+        self.y_files = self._run_path(y_path)
+        self.train, self.labels = self._read()
+
+    @staticmethod
+    def _run_path(path):
+        fs = os.listdir(path)
+        fs = list(map(lambda x: path + x, fs))
+        return fs
+
+    def _read(self, img_size=512, x_norm=2048.0, y_norm=255.0):
+        for x_name, y_name in zip(self.x_files, self.y_files):
+            x_file = dicom.read_file(x_name)
+            x_arr = np.array(x_file.pixel_array, dtype=np.float32).reshape((1, img_size * img_size))
+            self.x_data.append(x_arr)
+            y_img = Image.open(y_name).convert('L')
+            y_arr = np.array(y_img, dtype=np.float32).reshape((1, img_size*img_size))
+            self.y_data.append(y_arr)
+        x_array = np.concatenate(tuple(self.x_data), axis=0)
+        y_array = np.concatenate(tuple(self.y_data), axis=0)
+        print('Reader Initialization: Finished')
+        print('Training Data Size: %d \nTest Data Size: %d' % (len(self.x_data), len(self.y_data)))
+        x_array[x_array < 0.0] = 0.0
+        x_array /= x_norm
+        y_array /= y_norm
+        return x_array, y_array
+
+    def next_batch(self, num):
+        index = np.random.randint(low=0, high=len(self.x_data), size=(1, num))
+        x_batch = self.train[index]
+        y_batch = self.labels[index]
+        # return x_batch[0] + np.random.normal(scale=120, size=x_batch[0].shape),\
+        #        y_batch[0] + np.random.normal(scale=120, size=x_batch[0].shape)
+        return x_batch[0], y_batch[0]
+
+    def ordered_batch(self):
+        output = list()
+        for i in range(0, len(self.x_data)):
+            index = np.array([[i]])
+            x_batch = self.train[index]
+            output.append(x_batch[0])
+        return output
+
+
+class multiClassReader(dcmReader):
+    def _read(self, img_size=512, x_norm=2048.0, y_norm=255.0):
+        for x_name, y_name in zip(self.x_files, self.y_files):
+            x_file = dicom.read_file(x_name)
+            x_arr = np.array(x_file.pixel_array, dtype=np.float32).reshape((1, img_size*img_size))
+            self.x_data.append(x_arr)
+            y_img = Image.open(y_name).convert('L')
+            y_arr = np.array(y_img, dtype=np.float32)[:, :, None]
+            y_arr_ = np.concatenate([y_arr, 255.0-y_arr], axis=2)[None,:,:,:].reshape((1, 2*img_size*img_size))
+            self.y_data.append(y_arr_)
+        x_array = np.concatenate(tuple(self.x_data), axis=0)
+        y_array = np.concatenate(tuple(self.y_data), axis=0)
+        print('Reader Initialization: Finished')
+        print('Training Data Size: %d \nTest Data Size: %d' % (len(self.x_data), len(self.y_data)))
+        x_array[x_array < 0.0] = 0.0
+        x_array /= x_norm
+        y_array /= y_norm
+        return x_array, y_array
+
+>>>>>>> CRF and mysterious network changing...
 
 class Reader(object):
     def __init__(self, x_path=src_path, y_path=label_path):
@@ -68,6 +155,7 @@ class Reader(object):
 
 if __name__ == '__main__':
     reader = Reader()
+<<<<<<< HEAD
     for i in range(20):
         _ = reader.next_batch(5)
 
@@ -80,6 +168,15 @@ if __name__ == '__main__':
         plt.imshow(arr, cmap='gray')
         plt.subplot(122)
         plt.imshow(test_y[i].reshape((512, 512)), cmap='gray')
+=======
+    for i in range(100):
+        x, y = reader.next_batch(1)
+        plt.figure()
+        plt.subplot(121)
+        plt.imshow(x.reshape((512,512)), cmap='gray')
+        plt.subplot(122)
+        plt.imshow(y.reshape((512,512)), cmap='gray')
+>>>>>>> CRF and mysterious network changing...
         plt.show()
 
     print('Done!!')
